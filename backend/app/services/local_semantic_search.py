@@ -200,13 +200,14 @@ class LocalSemanticSearch:
                 collection = self._get_edge_collection(graph_id)
                 results = collection.query(query_texts=[query], n_results=limit)
                 if results and results.get("metadatas"):
-                    for meta_list in results["metadatas"]:
-                        for meta in meta_list:
+                    ids_list = results.get("ids", [[]])
+                    for meta_list, id_list in zip(results["metadatas"], ids_list):
+                        for meta, doc_id in zip(meta_list, id_list):
                             fact = meta.get("fact", "")
                             if fact:
                                 facts.append(fact)
                             edges.append({
-                                "uuid": "",
+                                "uuid": doc_id,
                                 "name": meta.get("name", ""),
                                 "fact": fact,
                                 "source_node_uuid": meta.get("source_node_uuid", ""),
@@ -217,14 +218,15 @@ class LocalSemanticSearch:
                 collection = self._get_node_collection(graph_id)
                 results = collection.query(query_texts=[query], n_results=limit)
                 if results and results.get("metadatas"):
-                    for meta_list in results["metadatas"]:
-                        for meta in meta_list:
+                    ids_list = results.get("ids", [[]])
+                    for meta_list, id_list in zip(results["metadatas"], ids_list):
+                        for meta, doc_id in zip(meta_list, id_list):
                             summary = meta.get("summary", "")
                             name = meta.get("name", "")
                             labels_str = meta.get("labels", "[]")
                             labels = json.loads(labels_str) if isinstance(labels_str, str) else labels_str
                             nodes.append({
-                                "uuid": "",
+                                "uuid": doc_id,
                                 "name": name,
                                 "labels": labels,
                                 "summary": summary,

@@ -121,16 +121,8 @@ class LLMEntityExtractor:
             if not source_name or not target_name:
                 continue
 
-            # Resolve UUIDs — create stub nodes if needed
-            source_uuid = entity_name_to_uuid.get(source_name)
-            if source_uuid is None:
-                source_uuid = self.store.upsert_node(graph_id, source_name)
-                entity_name_to_uuid[source_name] = source_uuid
-
-            target_uuid = entity_name_to_uuid.get(target_name)
-            if target_uuid is None:
-                target_uuid = self.store.upsert_node(graph_id, target_name)
-                entity_name_to_uuid[target_name] = target_uuid
+            source_uuid = self._resolve_entity_uuid(source_name, graph_id, entity_name_to_uuid)
+            target_uuid = self._resolve_entity_uuid(target_name, graph_id, entity_name_to_uuid)
 
             self.store.add_edge(
                 graph_id=graph_id,
@@ -149,6 +141,19 @@ class LLMEntityExtractor:
         return {"entities_added": entities_added, "edges_added": edges_added}
 
     # ── internals ───────────────────────────────────────────
+
+    def _resolve_entity_uuid(
+        self,
+        name: str,
+        graph_id: str,
+        cache: Dict[str, str],
+    ) -> str:
+        """Resolve an entity name to its UUID, creating a stub node if needed."""
+        uuid = cache.get(name)
+        if uuid is None:
+            uuid = self.store.upsert_node(graph_id, name)
+            cache[name] = uuid
+        return uuid
 
     def _call_llm(self, text: str, ontology: Dict[str, Any]) -> Dict[str, Any]:
         """Call LLM for extraction and return parsed JSON."""

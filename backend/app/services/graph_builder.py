@@ -41,6 +41,9 @@ class GraphBuilderService:
     图谱构建服务
     使用本地 SQLite + LLM 抽取构建知识图谱（替代 Zep Cloud）
     """
+
+    # Delay between LLM extraction batches (seconds) to avoid rate limits
+    BATCH_DELAY = 0.5
     
     def __init__(self, api_key: Optional[str] = None):
         # api_key kept for backward-compatible call sites; no longer required
@@ -235,7 +238,7 @@ class GraphBuilderService:
                 episode_uuids.append(ep_uuid)
             
             # Small delay between batches to avoid LLM rate limits
-            time.sleep(0.5)
+            time.sleep(self.BATCH_DELAY)
         
         return episode_uuids
     
