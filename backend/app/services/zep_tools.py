@@ -549,27 +549,21 @@ class ZepToolsService:
     def get_node_edges(self, graph_id: str, node_uuid: str) -> List[EdgeInfo]:
         """
         获取节点相关的所有边
-        
-        通过获取图谱所有边，然后过滤出与指定节点相关的边
-        
-        Args:
-            graph_id: 图谱ID
-            node_uuid: 节点UUID
-            
-        Returns:
-            边列表
         """
         logger.info(t("console.fetchingNodeEdges", uuid=node_uuid[:8]))
         
         try:
-            # 获取图谱所有边，然后过滤
-            all_edges = self.get_all_edges(graph_id)
+            edges = self.store.get_edges_by_node(node_uuid)
             
             result = []
-            for edge in all_edges:
-                # 检查边是否与指定节点相关（作为源或目标）
-                if edge.source_node_uuid == node_uuid or edge.target_node_uuid == node_uuid:
-                    result.append(edge)
+            for edge in edges:
+                result.append(EdgeInfo(
+                    uuid=edge.get("uuid", ""),
+                    name=edge.get("name", ""),
+                    fact=edge.get("fact", ""),
+                    source_node_uuid=edge.get("source_node_uuid", ""),
+                    target_node_uuid=edge.get("target_node_uuid", "")
+                ))
             
             logger.info(t("console.foundNodeEdges", count=len(result)))
             return result

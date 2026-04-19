@@ -105,7 +105,11 @@ class LocalSemanticSearch:
             })
 
         if ids:
-            collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
+            try:
+                collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
+            except Exception as e:
+                logger.warning(f"ChromaDB edge sync failed (will use keyword fallback): {e}")
+                self._chroma_available = False
 
     def _sync_nodes(self, graph_id: str):
         collection = self._get_node_collection(graph_id)
@@ -133,7 +137,11 @@ class LocalSemanticSearch:
             })
 
         if ids:
-            collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
+            try:
+                collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
+            except Exception as e:
+                logger.warning(f"ChromaDB node sync failed (will use keyword fallback): {e}")
+                self._chroma_available = False
 
     def delete_index(self, graph_id: str):
         """Delete vector index for a graph."""
