@@ -245,55 +245,29 @@ class GraphBuilderService:
         progress_callback: Optional[Callable] = None,
         timeout: int = 600
     ):
-        """等待所有 episode 处理完成（通过查询每个 episode 的 processed 状态）"""
+        """
+        Check episode processing status.
+        With local LLM extraction, episodes are processed synchronously,
+        so this is mostly a no-op kept for backward compatibility.
+        """
         if not episode_uuids:
             if progress_callback:
                 progress_callback(t('progress.noEpisodesWait'), 1.0)
             return
         
-        start_time = time.time()
-        pending_episodes = set(episode_uuids)
-        completed_count = 0
         total_episodes = len(episode_uuids)
+        completed_count = 0
+        
+        for ep_uuid in episode_uuids:
+            ep = self.store.get_episode(ep_uuid)
+            if ep and ep.get("processed"):
+                completed_count += 1
         
         if progress_callback:
-            progress_callback(t('progress.waitingEpisodes', count=total_episodes), 0)
-        
-        while pending_episodes:
-            if time.time() - start_time > timeout:
-                if progress_callback:
-                    progress_callback(
-                        t('progress.episodesTimeout', completed=completed_count, total=total_episodes),
-                        completed_count / total_episodes
-                    )
-                break
-            
-            # 检查每个 episode 的处理状态
-            for ep_uuid in list(pending_episodes):
-                try:
-                    episode = self.client.graph.episode.get(uuid_=ep_uuid)
-                    is_processed = getattr(episode, 'processed', False)
-                    
-                    if is_processed:
-                        pending_episodes.remove(ep_uuid)
-                        completed_count += 1
-                        
-                except Exception as e:
-                    # 忽略单个查询错误，继续
-                    pass
-            
-            elapsed = int(time.time() - start_time)
-            if progress_callback:
-                progress_callback(
-                    t('progress.zepProcessing', completed=completed_count, total=total_episodes, pending=len(pending_episodes), elapsed=elapsed),
-                    completed_count / total_episodes if total_episodes > 0 else 0
-                )
-            
-            if pending_episodes:
-                time.sleep(3)  # 每3秒检查一次
-        
-        if progress_callback:
-            progress_callback(t('progress.processingComplete', completed=completed_count, total=total_episodes), 1.0)
+            progress_callback(
+                t('progress.processingComplete', completed=completed_count, total=total_episodes),
+                1.0
+            )
     
     def _get_graph_info(self, graph_id: str) -> GraphInfo:
         """获取图谱信息"""
